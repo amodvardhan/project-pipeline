@@ -21,4 +21,8 @@
     <ProjectReference Include="..\ProjectPipeline.Shared\ProjectPipeline.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="pipeline-frontend/src/components/common/" />
+  </ItemGroup>
+
 </Project>

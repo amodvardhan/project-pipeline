@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useDashboardStats } from '@/hooks/useDashboard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,12 +10,32 @@ import { FolderOpen, Users, BarChart3, Settings, Shield, RefreshCw } from 'lucid
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import { ProjectStatusChart, MonthlyTrendsChart, ValueTrendsChart } from '@/components/dashboard/DashboardCharts';
 import RecentProjects from '@/components/dashboard/RecentProjects';
-import { useState } from 'react';
+import ExportButtons from '@/components/common/ExportButtons';
+import { useState, useEffect } from 'react';
+import apiClient from '@/lib/api';
+import { Project } from '@/types';
 
 export default function DashboardPage() {
     const { user, logout } = useAuth();
+    const { stats } = useDashboardStats();
     const [refreshKey, setRefreshKey] = useState(0);
+    const [projects, setProjects] = useState<Project[]>([]);
     const isAdmin = user?.email === 'admin@projectpipeline.com';
+
+    useEffect(() => {
+        fetchProjects();
+    }, [refreshKey]);
+
+    const fetchProjects = async () => {
+        try {
+            const response = await apiClient.get('/projects?page=1&pageSize=1000');
+            if (response.data.isSuccess && response.data.data) {
+                setProjects(response.data.data.items || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch projects for export:', error);
+        }
+    };
 
     const handleRefresh = () => {
         setRefreshKey(prev => prev + 1);
@@ -37,6 +58,9 @@ export default function DashboardPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {stats && (
+                        <ExportButtons data={projects} type="dashboard" stats={stats} />
+                    )}
                     <Button onClick={handleRefresh} variant="outline" size="sm">
                         <RefreshCw className="h-4 w-4 mr-2" />
                         Refresh
@@ -56,7 +80,7 @@ export default function DashboardPage() {
                             Administrator Dashboard
                         </CardTitle>
                         <CardDescription className="text-green-700">
-                            You have full system access with real-time analytics and comprehensive project insights.
+                            You have full system access with real-time analytics, export capabilities, and comprehensive project insights.
                         </CardDescription>
                     </CardHeader>
                 </Card>

@@ -11,6 +11,7 @@ import { Search, Filter, Plus, DollarSign, Calendar, Building } from 'lucide-rea
 import { Project } from '@/types';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import ExportButtons from '@/components/common/ExportButtons';
 
 const statusColors = {
   Pipeline: 'bg-blue-100 text-blue-800',
@@ -78,14 +79,17 @@ export default function ProjectsList() {
             </div>
           )}
         </div>
-        {canCreateProjects && (
-          <Link href="/projects/add">
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add New Project
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportButtons data={filteredProjects} type="projects" />
+          {canCreateProjects && (
+            <Link href="/projects/add">
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add New Project
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Filters */}

@@ -23,6 +23,7 @@ import {
 import { Project } from '@/types';
 import apiClient from '@/lib/api';
 import Link from 'next/link';
+import ExportButtons from '@/components/common/ExportButtons';
 
 const statusColors = {
   Pipeline: 'bg-blue-100 text-blue-800',
@@ -46,8 +47,8 @@ export default function ProjectDetails({ projectId }: ProjectDetailsProps) {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const isAdmin = user?.email === 'admin@projectpipeline.com';
-  const canEdit = !!user; // All authenticated users can edit for now
-  const canDelete = isAdmin; // Only admin can delete
+  const canEdit = !!user;
+  const canDelete = isAdmin;
 
   useEffect(() => {
     fetchProject();
@@ -162,6 +163,7 @@ export default function ProjectDetails({ projectId }: ProjectDetailsProps) {
           <Badge className={statusColors[project.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}>
             {project.status}
           </Badge>
+          <ExportButtons type="single-project" singleProject={project} />
           {canEdit && (
             <Link href={`/projects/${projectId}/edit`}>
               <Button variant="outline" size="sm">
