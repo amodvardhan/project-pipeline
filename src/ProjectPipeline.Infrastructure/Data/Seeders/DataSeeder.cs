@@ -1,308 +1,237 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using ProjectPipeline.Core.Entities;
 using ProjectPipeline.Core.Enums;
 using ProjectPipeline.Infrastructure.Data.Context;
 
-namespace ProjectPipeline.Infrastructure.Data.Seeders
+namespace ProjectPipeline.Infrastructure.Data.Seed;
+
+public static class DataSeeder
 {
-    /// <summary>
-    /// Data seeder for initial application data
-    /// </summary>
-    public static class DataSeeder
+    public static async Task SeedAsync(ApplicationDbContext context, UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
     {
-        public static async Task SeedAsync(IServiceProvider serviceProvider)
+        // Seed Roles
+        await SeedRolesAsync(roleManager);
+
+        // Seed Business Units
+        await SeedBusinessUnitsAsync(context);
+
+        // Seed Users
+        await SeedUsersAsync(userManager, context);
+
+        // Seed Sample Projects
+        await SeedProjectsAsync(context, userManager);
+    }
+
+    private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
+    {
+        string[] roles = { "SystemAdmin", "DeliveryDirector", "DeliveryManager", "AccountManager" };
+
+        foreach (string role in roles)
         {
-            using var scope = serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<ApplicationDbContext>>();
-
-            try
+            if (!await roleManager.RoleExistsAsync(role))
             {
-                // Ensure database is created
-                await context.Database.EnsureCreatedAsync();
-
-                // Seed roles
-                await SeedRolesAsync(roleManager, logger);
-
-                // Seed business units and save changes
-                await SeedBusinessUnitsAsync(context, logger);
-                await context.SaveChangesAsync(); // Save business units first
-
-                // Seed admin user (now business units exist)
-                await SeedAdminUserAsync(userManager, context, logger);
-
-                // Seed sample data
-                await SeedSampleDataAsync(context, userManager, logger);
-
-                await context.SaveChangesAsync();
-                logger.LogInformation("Data seeding completed successfully");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "An error occurred while seeding data");
-                throw;
+                await roleManager.CreateAsync(new IdentityRole(role));
             }
         }
+    }
 
-        private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager, ILogger logger)
+    private static async Task SeedBusinessUnitsAsync(ApplicationDbContext context)
+    {
+        if (!await context.BusinessUnits.AnyAsync())
         {
-            logger.LogInformation("Seeding roles...");
-
-            var roles = new[]
+            var businessUnits = new List<BusinessUnit>
             {
-                "SystemAdmin",
-                "BusinessUnitHead", 
-                "DeliveryDirector",
-                "DeliveryManager",
-                "AccountManager"
-            };
-
-            foreach (var role in roles)
-            {
-                if (!await roleManager.RoleExistsAsync(role))
+                new BusinessUnit
                 {
-                    await roleManager.CreateAsync(new IdentityRole(role));
-                    logger.LogInformation($"Created role: {role}");
-                }
-            }
-        }
-
-        private static async Task SeedBusinessUnitsAsync(ApplicationDbContext context, ILogger logger)
-        {
-            logger.LogInformation("Seeding business units...");
-
-            if (!await context.BusinessUnits.AnyAsync())
-            {
-                var businessUnits = new[]
-                {
-                    new BusinessUnit
-                    {
-                        Name = "Digital Solutions",
-                        Code = "DS",
-                        Description = "Digital transformation and web solutions",
-                        HeadOfUnit = "John Smith",
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System"
-                    },
-                    new BusinessUnit
-                    {
-                        Name = "Enterprise Applications",
-                        Code = "EA",
-                        Description = "Enterprise software development and integration",
-                        HeadOfUnit = "Sarah Johnson",
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System"
-                    },
-                    new BusinessUnit
-                    {
-                        Name = "Cloud Services",
-                        Code = "CS",
-                        Description = "Cloud migration and infrastructure services",
-                        HeadOfUnit = "Mike Wilson",
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System"
-                    },
-                    new BusinessUnit
-                    {
-                        Name = "Data Analytics",
-                        Code = "DA",
-                        Description = "Data science and analytics solutions",
-                        HeadOfUnit = "Emily Davis",
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System"
-                    }
-                };
-
-                await context.BusinessUnits.AddRangeAsync(businessUnits);
-                logger.LogInformation($"Created {businessUnits.Length} business units");
-            }
-        }
-
-        private static async Task SeedAdminUserAsync(UserManager<User> userManager, ApplicationDbContext context, ILogger logger)
-        {
-            logger.LogInformation("Seeding admin user...");
-
-            const string adminEmail = "admin@projectpipeline.com";
-            const string adminPassword = "Admin@123456";
-
-            var adminUser = await userManager.FindByEmailAsync(adminEmail);
-            if (adminUser == null)
-            {
-                // Get the first business unit for admin (now it exists in database)
-                var firstBusinessUnit = await context.BusinessUnits.FirstOrDefaultAsync();
-                if (firstBusinessUnit == null)
-                {
-                    logger.LogError("No business units found for admin user creation");
-                    return;
-                }
-
-                adminUser = new User
-                {
-                    UserName = adminEmail,
-                    Email = adminEmail,
-                    EmailConfirmed = true,
-                    FirstName = "System",
-                    LastName = "Administrator",
-                    Department = "IT",
-                    Designation = "System Administrator",
-                    BusinessUnitId = firstBusinessUnit.Id,
+                    Name = "International Organization",
+                    Code = "IO",
+                    Description = "Impact organization with global reach",
+                    HeadOfUnit = "Swapnil Gade",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
-                };
-
-                var result = await userManager.CreateAsync(adminUser, adminPassword);
-                if (result.Succeeded)
+                },
+                new BusinessUnit
                 {
-                    await userManager.AddToRoleAsync(adminUser, "SystemAdmin");
-                    logger.LogInformation($"Created admin user: {adminEmail}");
-                }
-                else
+                    Name = "Enterprise Applications",
+                    Code = "EA",
+                    Description = "Enterprise software development",
+                    HeadOfUnit = "Sarah Johnson",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new BusinessUnit
                 {
-                    logger.LogError($"Failed to create admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                    Name = "Digital Product Engineering",
+                    Code = "DPES",
+                    Description = "Cloud infrastructure and services",
+                    HeadOfUnit = "Mike Wilson",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new BusinessUnit
+                {
+                    Name = "Data Analytics",
+                    Code = "DA",
+                    Description = "Business intelligence and analytics",
+                    HeadOfUnit = "Lisa Brown",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
                 }
-            }
-        }
-
-        private static async Task SeedSampleDataAsync(ApplicationDbContext context, UserManager<User> userManager, ILogger logger)
-        {
-            logger.LogInformation("Seeding sample data...");
-
-            // Create sample users if they don't exist
-            await SeedSampleUsersAsync(userManager, context, logger);
-
-            // Create sample projects if they don't exist
-            if (!await context.Projects.AnyAsync())
-            {
-                await SeedSampleProjectsAsync(context, userManager, logger);
-            }
-        }
-
-        private static async Task SeedSampleUsersAsync(UserManager<User> userManager, ApplicationDbContext context, ILogger logger)
-        {
-            var businessUnits = await context.BusinessUnits.ToListAsync();
-            var sampleUsers = new[]
-            {
-                new { Email = "john.doe@company.com", FirstName = "John", LastName = "Doe", Role = "AccountManager", Department = "Sales", Designation = "Senior Account Manager" },
-                new { Email = "jane.smith@company.com", FirstName = "Jane", LastName = "Smith", Role = "DeliveryManager", Department = "Delivery", Designation = "Delivery Manager" },
-                new { Email = "bob.wilson@company.com", FirstName = "Bob", LastName = "Wilson", Role = "DeliveryDirector", Department = "Delivery", Designation = "Delivery Director" },
-                new { Email = "alice.brown@company.com", FirstName = "Alice", LastName = "Brown", Role = "BusinessUnitHead", Department = "Management", Designation = "BU Head" }
             };
 
-            foreach (var userData in sampleUsers)
-            {
-                var existingUser = await userManager.FindByEmailAsync(userData.Email);
-                if (existingUser == null)
-                {
-                    var user = new User
-                    {
-                        UserName = userData.Email,
-                        Email = userData.Email,
-                        EmailConfirmed = true,
-                        FirstName = userData.FirstName,
-                        LastName = userData.LastName,
-                        Department = userData.Department,
-                        Designation = userData.Designation,
-                        BusinessUnitId = businessUnits[Random.Shared.Next(businessUnits.Count)].Id,
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow
-                    };
+            await context.BusinessUnits.AddRangeAsync(businessUnits);
+            await context.SaveChangesAsync();
+        }
+    }
 
-                    var result = await userManager.CreateAsync(user, "User@123456");
-                    if (result.Succeeded)
-                    {
-                        await userManager.AddToRoleAsync(user, userData.Role);
-                        logger.LogInformation($"Created sample user: {userData.Email}");
-                    }
-                }
+    private static async Task SeedUsersAsync(UserManager<User> userManager, ApplicationDbContext context)
+    {
+        // Get business units for assignment
+        var businessUnits = await context.BusinessUnits.ToListAsync();
+        var digitalSolutions = businessUnits.FirstOrDefault(bu => bu.Code == "DPES");
+
+        // Seed Admin User
+        if (await userManager.FindByEmailAsync("admin@projectpipeline.com") == null)
+        {
+            var adminUser = new User
+            {
+                UserName = "admin@projectpipeline.com",
+                Email = "admin@projectpipeline.com",
+                FirstName = "System",
+                LastName = "Administrator",
+                Department = "IT",
+                Designation = "System Admin",
+                BusinessUnitId = digitalSolutions?.Id,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(adminUser, "Admin@123456");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(adminUser, "SystemAdmin");
             }
         }
 
-        private static async Task SeedSampleProjectsAsync(ApplicationDbContext context, UserManager<User> userManager, ILogger logger)
+        // Seed Account Manager
+        if (await userManager.FindByEmailAsync("am@projectpipeline.com") == null)
         {
-            var businessUnits = await context.BusinessUnits.ToListAsync();
-            var adminUser = await userManager.FindByEmailAsync("admin@projectpipeline.com");
-            
-            if (adminUser == null)
+            var amUser = new User
             {
-                logger.LogWarning("Admin user not found, skipping sample projects");
-                return;
-            }
+                UserName = "am@projectpipeline.com",
+                Email = "am@projectpipeline.com",
+                FirstName = "Alice",
+                LastName = "Manager",
+                Department = "Sales",
+                Designation = "Account Manager",
+                BusinessUnitId = digitalSolutions?.Id,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                EmailConfirmed = true
+            };
 
-            var sampleProjects = new[]
+            var result = await userManager.CreateAsync(amUser, "AM@123456");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(amUser, "AccountManager");
+            }
+        }
+
+        // Seed Delivery Manager
+        if (await userManager.FindByEmailAsync("dm@projectpipeline.com") == null)
+        {
+            var dmUser = new User
+            {
+                UserName = "dm@projectpipeline.com",
+                Email = "dm@projectpipeline.com",
+                FirstName = "David",
+                LastName = "Manager",
+                Department = "Delivery",
+                Designation = "Delivery Manager",
+                BusinessUnitId = digitalSolutions?.Id,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(dmUser, "DM@123456");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(dmUser, "DeliveryManager");
+            }
+        }
+    }
+
+    private static async Task SeedProjectsAsync(ApplicationDbContext context, UserManager<User> userManager)
+    {
+        if (!await context.Projects.AnyAsync())
+        {
+            var adminUser = await userManager.FindByEmailAsync("admin@projectpipeline.com");
+            var businessUnits = await context.BusinessUnits.ToListAsync();
+            var digitalSolutions = businessUnits.FirstOrDefault(bu => bu.Code == "DS");
+            var enterpriseApps = businessUnits.FirstOrDefault(bu => bu.Code == "EA");
+
+            var projects = new List<Project>
             {
                 new Project
                 {
                     Name = "E-Commerce Platform Modernization",
                     Description = "Modernize legacy e-commerce platform with microservices architecture",
-                    ClientName = "RetailCorp Inc.",
-                    EstimatedValue = 500000m,
-                    Status = ProjectStatusEnum.Pipeline,
-                    Technology = ".NET Core, React, Azure",
+                    ClientName = "RetailCorp Inc",
+                    Technology = "React, .NET Core, Azure, Docker",
                     ProjectType = "Development",
-                    BusinessUnitId = businessUnits[0].Id,
-                    ExpectedClosureDate = DateTime.UtcNow.AddMonths(3),
-                    CreatedAt = DateTime.UtcNow.AddDays(-10),
-                    CreatedBy = adminUser.Id
-                },
-                new Project
-                {
-                    Name = "Cloud Migration Project",
-                    Description = "Migrate on-premise applications to Azure cloud",
-                    ClientName = "TechStart Solutions",
-                    EstimatedValue = 750000m,
-                    ActualValue = 720000m,
-                    Status = ProjectStatusEnum.Won,
-                    StatusReason = "Competitive pricing and strong technical proposal",
-                    Technology = "Azure, Docker, Kubernetes",
-                    ProjectType = "Migration",
-                    BusinessUnitId = businessUnits[2].Id,
-                    StartDate = DateTime.UtcNow.AddDays(-30),
-                    ExpectedClosureDate = DateTime.UtcNow.AddMonths(6),
-                    CreatedAt = DateTime.UtcNow.AddDays(-45),
-                    CreatedBy = adminUser.Id
-                },
-                new Project
-                {
-                    Name = "Data Analytics Dashboard",
-                    Description = "Build real-time analytics dashboard for business intelligence",
-                    ClientName = "DataDriven Corp",
-                    EstimatedValue = 300000m,
-                    Status = ProjectStatusEnum.Lost,
-                    StatusReason = "Client chose competitor due to budget constraints",
-                    Technology = "Power BI, SQL Server, Python",
-                    ProjectType = "Analytics",
-                    BusinessUnitId = businessUnits[3].Id,
-                    ExpectedClosureDate = DateTime.UtcNow.AddMonths(2),
-                    CreatedAt = DateTime.UtcNow.AddDays(-20),
-                    CreatedBy = adminUser.Id
-                },
-                new Project
-                {
-                    Name = "Mobile App Development",
-                    Description = "Cross-platform mobile application for customer engagement",
-                    ClientName = "MobileFirst Ltd",
-                    EstimatedValue = 400000m,
+                    EstimatedValue = 250000,
                     Status = ProjectStatusEnum.Pipeline,
+                    BusinessUnitId = digitalSolutions?.Id ?? 1,
+                    ExpectedClosureDate = DateTime.UtcNow.AddMonths(3),
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = adminUser?.Id,
+                    ProfilesSubmitted = 5,
+                    ProfilesShortlisted = 2,
+                    ProfilesSelected = 0
+                },
+                new Project
+                {
+                    Name = "CRM System Integration",
+                    Description = "Integrate Salesforce CRM with existing ERP system",
+                    ClientName = "TechSolutions Ltd",
+                    Technology = "Salesforce, .NET, SQL Server",
+                    ProjectType = "Integration",
+                    EstimatedValue = 150000,
+                    Status = ProjectStatusEnum.Won,
+                    ActualValue = 145000,
+                    BusinessUnitId = enterpriseApps?.Id ?? 2,
+                    ExpectedClosureDate = DateTime.UtcNow.AddMonths(2),
+                    StartDate = DateTime.UtcNow.AddDays(-30),
+                    CreatedAt = DateTime.UtcNow.AddDays(-45),
+                    CreatedBy = adminUser?.Id,
+                    ProfilesSubmitted = 8,
+                    ProfilesShortlisted = 4,
+                    ProfilesSelected = 2
+                },
+                new Project
+                {
+                    Name = "Mobile Banking App",
+                    Description = "Develop secure mobile banking application for iOS and Android",
+                    ClientName = "FinanceBank",
                     Technology = "React Native, Node.js, MongoDB",
                     ProjectType = "Mobile Development",
-                    BusinessUnitId = businessUnits[0].Id,
-                    ExpectedClosureDate = DateTime.UtcNow.AddMonths(4),
-                    CreatedAt = DateTime.UtcNow.AddDays(-5),
-                    CreatedBy = adminUser.Id
+                    EstimatedValue = 400000,
+                    Status = ProjectStatusEnum.Pipeline,
+                    BusinessUnitId = digitalSolutions?.Id ?? 1,
+                    ExpectedClosureDate = DateTime.UtcNow.AddMonths(6),
+                    CreatedAt = DateTime.UtcNow.AddDays(-10),
+                    CreatedBy = adminUser?.Id,
+                    ProfilesSubmitted = 12,
+                    ProfilesShortlisted = 6,
+                    ProfilesSelected = 1
                 }
             };
 
-            await context.Projects.AddRangeAsync(sampleProjects);
-            logger.LogInformation($"Created {sampleProjects.Length} sample projects");
+            await context.Projects.AddRangeAsync(projects);
+            await context.SaveChangesAsync();
         }
     }
 }

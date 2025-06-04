@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Folder Include="pipeline-frontend/src/components/common/" />
+    <Folder Include="pipeline-frontend/src/components/profiles/" />
   </ItemGroup>
 
 </Project>

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ArrowLeft, 
   Edit, 
@@ -18,12 +19,14 @@ import {
   Code, 
   Briefcase,
   Clock,
-  Target
+  Target,
+  Users
 } from 'lucide-react';
 import { Project } from '@/types';
 import apiClient from '@/lib/api';
 import Link from 'next/link';
 import ExportButtons from '@/components/common/ExportButtons';
+import ProfileSubmissionList from '@/components/profiles/ProfileSubmissionList';
 
 const statusColors = {
   Pipeline: 'bg-blue-100 text-blue-800',
@@ -186,178 +189,199 @@ export default function ProjectDetails({ projectId }: ProjectDetailsProps) {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Main Details */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Project Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5" />
-                Project Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {project.description && (
-                <div>
-                  <h4 className="font-semibold mb-2">Description</h4>
-                  <p className="text-gray-700">{project.description}</p>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Project Type</h4>
-                  <p className="text-gray-700">{project.projectType}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Business Unit</h4>
-                  <p className="text-gray-700">{project.businessUnitName}</p>
-                </div>
-              </div>
+      {/* Tabs for Project Details and Profiles */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4" />
+            Project Overview
+          </TabsTrigger>
+          <TabsTrigger value="profiles" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Profile Submissions ({project.profilesSubmitted})
+          </TabsTrigger>
+        </TabsList>
 
-              {project.statusReason && (
-                <div>
-                  <h4 className="font-semibold mb-2">Status Reason</h4>
-                  <p className="text-gray-700">{project.statusReason}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Technology Stack */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Code className="h-5 w-5" />
-                Technology Stack
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {project.technology?.split(',').map((tech, index) => (
-                  <Badge key={index} variant="secondary">
-                    {tech.trim()}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Resource Metrics */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Resource Metrics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{project.profilesSubmitted}</div>
-                  <div className="text-sm text-gray-600">Profiles Submitted</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-600">{project.profilesShortlisted}</div>
-                  <div className="text-sm text-gray-600">Shortlisted</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{project.profilesSelected}</div>
-                  <div className="text-sm text-gray-600">Selected</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column - Key Information */}
-        <div className="space-y-6">
-          {/* Financial Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Financial Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="text-sm text-gray-600">Estimated Value</div>
-                <div className="text-xl font-bold text-green-600">
-                  {formatCurrency(project.estimatedValue)}
-                </div>
-              </div>
-              
-              {project.actualValue && (
-                <div>
-                  <div className="text-sm text-gray-600">Actual Value</div>
-                  <div className="text-xl font-bold text-blue-600">
-                    {formatCurrency(project.actualValue)}
+        {/* Project Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Main Details */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Project Overview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="h-5 w-5" />
+                    Project Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {project.description && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Description</h4>
+                      <p className="text-gray-700">{project.description}</p>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">Project Type</h4>
+                      <p className="text-gray-700">{project.projectType}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Business Unit</h4>
+                      <p className="text-gray-700">{project.businessUnitName}</p>
+                    </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Timeline
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="text-sm text-gray-600">Expected Closure</div>
-                <div className="font-semibold">{formatDate(project.expectedClosureDate)}</div>
-              </div>
-              
-              {project.startDate && (
-                <div>
-                  <div className="text-sm text-gray-600">Start Date</div>
-                  <div className="font-semibold">{formatDate(project.startDate)}</div>
-                </div>
-              )}
-              
-              {project.endDate && (
-                <div>
-                  <div className="text-sm text-gray-600">End Date</div>
-                  <div className="font-semibold">{formatDate(project.endDate)}</div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  {project.statusReason && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Status Reason</h4>
+                      <p className="text-gray-700">{project.statusReason}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-          {/* Project Meta */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Project Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="text-sm text-gray-600">Created By</div>
-                <div className="font-semibold">{project.createdByName || 'Unknown'}</div>
-              </div>
-              
-              <div>
-                <div className="text-sm text-gray-600">Created On</div>
-                <div className="font-semibold">{formatDateTime(project.createdAt)}</div>
-              </div>
-              
-              <div>
-                <div className="text-sm text-gray-600">Project ID</div>
-                <div className="font-mono text-sm">{project.id}</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              {/* Technology Stack */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Code className="h-5 w-5" />
+                    Technology Stack
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {project.technology?.split(',').map((tech, index) => (
+                      <Badge key={index} variant="secondary">
+                        {tech.trim()}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Resource Metrics */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Resource Metrics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{project.profilesSubmitted}</div>
+                      <div className="text-sm text-gray-600">Profiles Submitted</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-yellow-600">{project.profilesShortlisted}</div>
+                      <div className="text-sm text-gray-600">Shortlisted</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">{project.profilesSelected}</div>
+                      <div className="text-sm text-gray-600">Selected</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Key Information */}
+            <div className="space-y-6">
+              {/* Financial Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Financial Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="text-sm text-gray-600">Estimated Value</div>
+                    <div className="text-xl font-bold text-green-600">
+                      {formatCurrency(project.estimatedValue)}
+                    </div>
+                  </div>
+                  
+                  {project.actualValue && (
+                    <div>
+                      <div className="text-sm text-gray-600">Actual Value</div>
+                      <div className="text-xl font-bold text-blue-600">
+                        {formatCurrency(project.actualValue)}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Timeline */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Timeline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="text-sm text-gray-600">Expected Closure</div>
+                    <div className="font-semibold">{formatDate(project.expectedClosureDate)}</div>
+                  </div>
+                  
+                  {project.startDate && (
+                    <div>
+                      <div className="text-sm text-gray-600">Start Date</div>
+                      <div className="font-semibold">{formatDate(project.startDate)}</div>
+                    </div>
+                  )}
+                  
+                  {project.endDate && (
+                    <div>
+                      <div className="text-sm text-gray-600">End Date</div>
+                      <div className="font-semibold">{formatDate(project.endDate)}</div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Project Meta */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Project Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="text-sm text-gray-600">Created By</div>
+                    <div className="font-semibold">{project.createdByName || 'Unknown'}</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-sm text-gray-600">Created On</div>
+                    <div className="font-semibold">{formatDateTime(project.createdAt)}</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-sm text-gray-600">Project ID</div>
+                    <div className="font-mono text-sm">{project.id}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Profile Submissions Tab */}
+        <TabsContent value="profiles">
+          <ProfileSubmissionList projectId={parseInt(projectId)} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

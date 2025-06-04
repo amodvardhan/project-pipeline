@@ -26,7 +26,7 @@ try
     // Add services to the container
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    
+
     // Add Swagger with JWT support
     builder.Services.AddSwaggerDocumentation();
 
@@ -65,7 +65,7 @@ try
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!))
         };
     });
 
@@ -102,7 +102,7 @@ try
 
     app.UseHttpsRedirection();
     app.UseCors("AllowSpecificOrigin");
-    
+
     app.UseAuthentication();
     app.UseAuthorization();
 

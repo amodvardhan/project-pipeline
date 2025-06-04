@@ -1,4 +1,7 @@
-using ProjectPipeline.Infrastructure.Data.Seeders;
+using Microsoft.AspNetCore.Identity;
+using ProjectPipeline.Core.Entities;
+using ProjectPipeline.Infrastructure.Data.Context;
+using ProjectPipeline.Infrastructure.Data.Seed;
 
 namespace ProjectPipeline.API.Extensions
 {
@@ -16,11 +19,15 @@ namespace ProjectPipeline.API.Extensions
         {
             using var scope = app.Services.CreateScope();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            
+
             try
             {
                 logger.LogInformation("Starting database seeding...");
-                await DataSeeder.SeedAsync(scope.ServiceProvider);
+                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+                await DataSeeder.SeedAsync(context, userManager, roleManager);
                 logger.LogInformation("Database seeding completed successfully");
             }
             catch (Exception ex)

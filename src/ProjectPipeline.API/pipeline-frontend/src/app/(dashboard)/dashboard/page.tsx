@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { FolderOpen, Users, BarChart3, Settings, Shield, RefreshCw } from 'lucide-react';
+import { FolderOpen, Users, BarChart3, Settings, Shield, RefreshCw, UserPlus } from 'lucide-react';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import { ProjectStatusChart, MonthlyTrendsChart, ValueTrendsChart } from '@/components/dashboard/DashboardCharts';
-import RecentProjects from '@/components/dashboard/RecentProjects';
+import RecentProfiles from '@/components/dashboard/RecentProfiles';
 import ExportButtons from '@/components/common/ExportButtons';
 import { useState, useEffect } from 'react';
 import apiClient from '@/lib/api';
@@ -80,7 +80,7 @@ export default function DashboardPage() {
                             Administrator Dashboard
                         </CardTitle>
                         <CardDescription className="text-green-700">
-                            You have full system access with real-time analytics, export capabilities, and comprehensive project insights.
+                            You have full system access with real-time analytics, export capabilities, profile management, and comprehensive project insights.
                         </CardDescription>
                     </CardHeader>
                 </Card>
@@ -104,7 +104,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Recent Projects - Takes 2 columns */}
                 <div className="lg:col-span-2">
-                    <RecentProjects />
+                    <RecentProfiles />
                 </div>
 
                 {/* Quick Actions */}
@@ -130,6 +130,12 @@ export default function DashboardPage() {
                                     Add New Project
                                 </Button>
                             </Link>
+
+                            <Button variant="outline" className="w-full justify-start" disabled>
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Profile Management
+                                <Badge variant="secondary" className="ml-auto">Active</Badge>
+                            </Button>
 
                             <Button variant="outline" className="w-full justify-start" disabled>
                                 <Users className="h-4 w-4 mr-2" />

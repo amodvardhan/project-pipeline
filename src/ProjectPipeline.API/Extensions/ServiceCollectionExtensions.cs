@@ -3,28 +3,32 @@ using ProjectPipeline.Core.Interfaces.Services;
 using ProjectPipeline.Infrastructure.Data.Repositories;
 using ProjectPipeline.Infrastructure.Services;
 
-namespace ProjectPipeline.API.Extensions;
-
-/// <summary>
-/// Extension methods for service registration
-/// </summary>
-public static class ServiceCollectionExtensions
+namespace ProjectPipeline.API.Extensions
 {
-    public static IServiceCollection RegisterApplicationServices(this IServiceCollection services)
+    /// <summary>
+    /// Extension methods for service registration
+    /// </summary>
+    public static class ServiceCollectionExtensions
     {
-        // Register Repositories
-        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-        services.AddScoped<IProjectRepository, ProjectRepository>();
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        public static IServiceCollection RegisterApplicationServices(this IServiceCollection services)
+        {
+            // Register Repositories
+            services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            services.AddScoped<IProjectRepository, ProjectRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IProfileSubmissionRepository, ProfileSubmissionRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Register Services
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IProjectService, ProjectService>();
-        services.AddScoped<IUserService, UserService>();
+            // Register Services
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IProjectService, ProjectService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IProfileSubmissionService, ProfileSubmissionService>();
 
-        // Add AutoMapper
-        services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            // Add AutoMapper if you're using it
+            // services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-        return services;
+            return services;
+        }
     }
 }
